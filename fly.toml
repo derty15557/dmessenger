@@ -1,0 +1,12 @@
+app = "dmessenger"  # Придумай уникальное имя
+
+[env]
+  FLET_SESSION_TIMEOUT = "60"
+
+[[services]]
+  internal_port = 8000
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
