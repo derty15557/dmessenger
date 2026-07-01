@@ -24,7 +24,7 @@ class HealthHandler(BaseHTTPRequestHandler):
 
 
 def run_http_server():
-    port = int(os.environ.get("PORT", 8888))
+    port = int(os.environ.get("PORT", 8080))
     server = HTTPServer(('0.0.0.0', port), HealthHandler)
     print(f"🟢 HTTP Health Check сервер запущен на порту {port}")
     server.serve_forever()
@@ -513,7 +513,7 @@ async def main():
     http_thread.start()
 
     # 👇 ВАЖНО: WebSocket ЗАПУСКАЕМ НА ТОМ ЖЕ ПОРТУ, ЧТО И HTTP
-    ws_port = int(os.environ.get("PORT", 8888))  # Тот же порт, что и у HTTP!
+    ws_port = int(os.environ.get("PORT", 8080))  # Тот же порт, что и у HTTP!
 
     server = ChatServer()
     try:
