@@ -415,13 +415,11 @@ class ChatServer:
             'users': user_list
         }))
 
-    # 👇 ИЗМЕНЕНО: ДОБАВЛЕН ПАРАМЕТР path
     async def handle_connection(self, websocket, path=None):
         print(f"🟢 Новое подключение: {websocket.remote_address}")
 
-        # Разрешаем подключение по любому пути
         if path:
-            print(f"📂 Путь подключения: {path}")
+            print(f"📂 Путь: {path}")
 
         await websocket.send(json.dumps({
             'type': 'welcome',
@@ -510,15 +508,17 @@ class ChatServer:
 
 # ============ ЗАПУСК ============
 async def main():
-    # Запускаем HTTP сервер для Health Check в отдельном потоке
+    # Запускаем HTTP сервер для Health Check
     http_thread = threading.Thread(target=run_http_server, daemon=True)
     http_thread.start()
 
-    # Запускаем WebSocket сервер
+    # 👇 ВАЖНО: WebSocket ЗАПУСКАЕМ НА ТОМ ЖЕ ПОРТУ, ЧТО И HTTP
+    ws_port = int(os.environ.get("PORT", 8765))  # Тот же порт, что и у HTTP!
+
     server = ChatServer()
     try:
-        async with websockets.serve(server.handle_connection, "0.0.0.0", 8766):
-            print("🟢 WebSocket сервер запущен на ws://0.0.0.0:8766")
+        async with websockets.serve(server.handle_connection, "0.0.0.0", ws_port):
+            print(f"🟢 WebSocket сервер запущен на ws://0.0.0.0:{ws_port}")
             print("📱 Ожидание подключений...")
             await asyncio.Future()
     except OSError as e:
