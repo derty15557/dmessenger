@@ -8,7 +8,7 @@ from models import User, Message
 from email_sender import EmailSender
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
-import os  # 👈 ДОБАВЛЯЕМ ЭТУ СТРОКУ
+import os
 
 
 # ============ HTTP СЕРВЕР ДЛЯ HEALTH CHECK ============
@@ -20,11 +20,10 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.wfile.write(b'Server is running!')
 
     def log_message(self, format, *args):
-        pass  # Отключаем логи HTTP
+        pass
 
 
 def run_http_server():
-    # 👇 ИЗМЕНЯЕМ ЗДЕСЬ - используем PORT от Railway
     port = int(os.environ.get("PORT", 8765))
     server = HTTPServer(('0.0.0.0', port), HealthHandler)
     print(f"🟢 HTTP Health Check сервер запущен на порту {port}")
@@ -241,8 +240,6 @@ class ChatServer:
 
         await self.broadcast_user_list()
 
-    # ==================== ПОДАРКИ ====================
-
     async def send_gift(self, websocket, data):
         from_user_id = data.get('user_id')
         to_user_id = data.get('receiver_id')
@@ -333,8 +330,6 @@ class ChatServer:
             'gifts': user_gifts
         }))
 
-    # ==================== СФЕРЫ ====================
-
     async def earn_spheres(self, websocket, data):
         user_id = data.get('user_id')
         amount = self.db.earn_spheres(user_id)
@@ -359,8 +354,6 @@ class ChatServer:
             'spheres': spheres,
             'transactions': transactions
         }))
-
-    # ==================== СООБЩЕНИЯ ====================
 
     async def handle_message(self, websocket, data: dict):
         user_id = data.get('user_id')
@@ -422,8 +415,13 @@ class ChatServer:
             'users': user_list
         }))
 
-    async def handle_connection(self, websocket):
+    # 👇 ИЗМЕНЕНО: ДОБАВЛЕН ПАРАМЕТР path
+    async def handle_connection(self, websocket, path=None):
         print(f"🟢 Новое подключение: {websocket.remote_address}")
+
+        # Разрешаем подключение по любому пути
+        if path:
+            print(f"📂 Путь подключения: {path}")
 
         await websocket.send(json.dumps({
             'type': 'welcome',
@@ -516,7 +514,7 @@ async def main():
     http_thread = threading.Thread(target=run_http_server, daemon=True)
     http_thread.start()
 
-    # Запускаем WebSocket сервер - порт 8766 оставляем без изменений
+    # Запускаем WebSocket сервер
     server = ChatServer()
     try:
         async with websockets.serve(server.handle_connection, "0.0.0.0", 8766):
