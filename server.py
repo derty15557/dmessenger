@@ -6,8 +6,30 @@ from datetime import datetime
 from database import Database
 from models import User, Message
 from email_sender import EmailSender
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
 
 
+# ============ HTTP СЕРВЕР ДЛЯ HEALTH CHECK ============
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b'Server is running!')
+
+    def log_message(self, format, *args):
+        pass  # Отключаем логи HTTP
+
+
+def run_http_server():
+    port = 8765
+    server = HTTPServer(('0.0.0.0', port), HealthHandler)
+    print(f"🟢 HTTP Health Check сервер запущен на порту {port}")
+    server.serve_forever()
+
+
+# ============ ОСНОВНОЙ ЧАТ-СЕРВЕР (WebSocket) ============
 class ChatServer:
     def __init__(self):
         self.db = Database()
@@ -486,11 +508,17 @@ class ChatServer:
             await self.broadcast_user_list()
 
 
+# ============ ЗАПУСК ============
 async def main():
+    # Запускаем HTTP сервер для Health Check в отдельном потоке
+    http_thread = threading.Thread(target=run_http_server, daemon=True)
+    http_thread.start()
+
+    # Запускаем WebSocket сервер на порту 8766
     server = ChatServer()
     try:
-        async with websockets.serve(server.handle_connection, "0.0.0.0", 8765):
-            print("🟢 Сервер запущен на ws://0.0.0.0:8765")
+        async with websockets.serve(server.handle_connection, "0.0.0.0", 8766):
+            print("🟢 WebSocket сервер запущен на ws://0.0.0.0:8766")
             print("📱 Ожидание подключений...")
             await asyncio.Future()
     except OSError as e:
