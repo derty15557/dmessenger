@@ -8,6 +8,7 @@ from models import User, Message
 from email_sender import EmailSender
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+import os  # 👈 ДОБАВЛЯЕМ ЭТУ СТРОКУ
 
 
 # ============ HTTP СЕРВЕР ДЛЯ HEALTH CHECK ============
@@ -23,7 +24,8 @@ class HealthHandler(BaseHTTPRequestHandler):
 
 
 def run_http_server():
-    port = 8765
+    # 👇 ИЗМЕНЯЕМ ЗДЕСЬ - используем PORT от Railway
+    port = int(os.environ.get("PORT", 8765))
     server = HTTPServer(('0.0.0.0', port), HealthHandler)
     print(f"🟢 HTTP Health Check сервер запущен на порту {port}")
     server.serve_forever()
@@ -514,7 +516,7 @@ async def main():
     http_thread = threading.Thread(target=run_http_server, daemon=True)
     http_thread.start()
 
-    # Запускаем WebSocket сервер на порту 8766
+    # Запускаем WebSocket сервер - порт 8766 оставляем без изменений
     server = ChatServer()
     try:
         async with websockets.serve(server.handle_connection, "0.0.0.0", 8766):
